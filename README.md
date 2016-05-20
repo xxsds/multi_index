@@ -1,4 +1,4 @@
-Multi-Index -- A C++ template library for hamming distance indexes
+Multi-Index
 =========
 
 Installation
