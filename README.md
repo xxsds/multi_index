@@ -6,9 +6,9 @@ Installation
 
 To be described
 ```bash
-mkdir build
+./install.sh
 cd build
-cmake .. && make benchmark
+cmake .. && make exp0
 ```
 
 Getting Started
