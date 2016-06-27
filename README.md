@@ -5,6 +5,11 @@ Installation
 ------------
 
 To be described
+```bash
+mkdir build
+cd build
+cmake .. && make benchmark
+```
 
 Getting Started
 ------------
