@@ -149,10 +149,10 @@ ENDFOREACH()
 
 ADD_CUSTOM_TARGET(exp0
                   COMMAND cat ${exp0_results} > ${exp0_result_file}
-#                  COMMAND R --vanilla < ../scripts/table-1.R
+                  COMMAND R CMD BATCH ../scripts/exp0.R
                   DEPENDS ${exp0_results}
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                  COMMENT "Summarize results in ${exp0_result_file}.")
+                  COMMENT "\nResults can be found in ${exp0_result_file}.\nVisualization in file exp0.pdf\n")
 
 ### Experiment 1: Measure the efficiency of the searching phase
 #SET(exp1_result_file "${CMAKE_BINARY_DIR}/results/exp1.result.txt")
