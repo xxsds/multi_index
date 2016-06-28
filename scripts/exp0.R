@@ -1,6 +1,4 @@
-library(reshape)
 library(ggplot2)
-library(scales) # for alpha
 source("../scripts/multi_index.R")
 source("../external/sdsl-lite/benchmark/basic_functions.R")
 
