@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 cmake_policy(SET CMP0015 NEW)
+cmake_policy(SET CMP0054 NEW)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 include(AppendCompilerFlags)
 include(ExternalProject)
@@ -124,26 +125,25 @@ FOREACH(line ${exp0_lines})
                          K=${t_k} 
                          INDEX_TYPE=${index_type} 
                          INDEX_NAME="${index_name}")
-
-            FOREACH(test_case ${test_cases})
-                SET(exp0_result ${CMAKE_BINARY_DIR}/results/${exec}.${test_case}.query.exp0.result.txt)
-                LIST(APPEND exp0_results ${exp0_result})
-                SET(abs_test_case ${CMAKE_HOME_DIRECTORY}/data/${test_case})
-                IF(NOT TARGET ${exp0_result})
-                    ADD_CUSTOM_COMMAND(OUTPUT ${exp0_result}
+        ENDIF()
+        FOREACH(test_case ${test_cases})
+            SET(exp0_result ${CMAKE_BINARY_DIR}/results/${exec}.${test_case}.query.exp0.result.txt)
+            LIST(APPEND exp0_results ${exp0_result})
+            SET(abs_test_case ${CMAKE_HOME_DIRECTORY}/data/${test_case})
+            IF(NOT TARGET ${exp0_result})
+                ADD_CUSTOM_COMMAND(OUTPUT ${exp0_result}
 #                                   COMMAND sh -c "echo 1 >/proc/sys/vm/drop_caches"
 #                                   COMMAND sh -c "sync && purge"                        
-                                       COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.query 0 > ${exp0_result}
+                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.query 0 > ${exp0_result}
 #                                   COMMAND sh -c "echo 1 >/proc/sys/vm/drop_caches"
-                                       COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.query 1 >> ${exp0_result}
-                                       COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.100.query 0 1
-                                       DEPENDS ${exec} ${test_case}-query-files
-                                       WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-                                       COMMENT "Execute exp0 for t_k=${t_k}\nCreating ${exp0_result}.\n"
-                                       VERBATIM)
-                ENDIF()
-            ENDFOREACH()
-        ENDIF()
+                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.query 1 >> ${exp0_result}
+                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.100.query 0 1
+                                   DEPENDS ${exec} ${test_case}-query-files
+                                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                                   COMMENT "Execute exp0 for t_k=${t_k}\nCreating ${exp0_result}.\n"
+                                   VERBATIM)
+            ENDIF()
+        ENDFOREACH()
     ENDFOREACH()
 ENDFOREACH()
 
@@ -154,62 +154,58 @@ ADD_CUSTOM_TARGET(exp0
                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                   COMMENT "\nResults can be found in ${exp0_result_file}.\nVisualization in file exp0.pdf\n")
 
-### Experiment 1: Measure the efficiency of the searching phase
-#SET(exp1_result_file "${CMAKE_BINARY_DIR}/results/exp1.result.txt")
-#SET(exp1_results "")
+## Experiment 1: Measure the efficiency of the searching phase
+SET(exp1_result_file "${CMAKE_BINARY_DIR}/results/exp1.result.txt")
+SET(exp1_results "")
 #
-#FILE(STRINGS ${CMAKE_HOME_DIRECTORY}/exp1.config exp1_lines REGEX "^[^#].*")
-#FOREACH(line ${exp1_lines})
-#    LIST(GET line 0 index_name)
-#    LIST(GET line 1 index_type)
-#    LIST(GET line 2 blocks)
-#    LIST(GET line 3 errors)
-#    MESSAGE("Exp 1 ${index_name}; ${index_type}; ${blocks}; ${errors}")
-#
-#    GEN_PERM_FILE(${blocks} ${errors} ${index_type})
-#
-#    SET(exec ${index_name}_index_${blocks}_${errors})
-#    IF(NOT TARGET ${exec})
-#        ADD_EXECUTABLE(${exec} src/index.cpp)
-#        TARGET_LINK_LIBRARIES(${index_name}_index_${blocks}_${errors} sdsl -ggdb divsufsort divsufsort64 multi_idx pthread)
-#        SET_PROPERTY(TARGET ${index_name}_index_${blocks}_${errors} PROPERTY COMPILE_DEFINITIONS 
-#                     N=${blocks}
-#                     K=${errors} 
-#                     INDEX_TYPE=${index_type} 
-#                     INDEX_NAME="${index_name}")
-#    ENDIF(NOT TARGET ${exec})
-#
-#
-#    FOREACH(test_case ${test_cases})
-#        SET(queries query)
-#        FOREACH(query_suf ${queries})
-#            SET(exp1_result ${CMAKE_BINARY_DIR}/results/${exec}.${test_case}.${query_suf}.exp1.result.txt)
-#            LIST(APPEND exp1_results ${exp1_result})
-#            SET(abs_test_case ${CMAKE_HOME_DIRECTORY}/data/${test_case})
-#            IF(NOT TARGET ${exp1_result})
-#                ADD_CUSTOM_COMMAND(OUTPUT ${exp1_result}
+FILE(STRINGS ${CMAKE_HOME_DIRECTORY}/exp1.config exp1_lines REGEX "^[^#].*")
+FOREACH(line ${exp1_lines})
+    LIST(GET line 0 index_name)
+    LIST(GET line 1 index_type)
+    LIST(GET line 2 errors)
+    STRING(REPLACE "," ";" error_list ${errors})
+    MESSAGE("Exp 1 ${index_name}; ${index_type}; ${error_list}")
+    FOREACH(t_k ${error_list})
+        STRING(REGEX REPLACE "([,<])t_k([,>])" "\\1${t_k}\\2" type ${index_type}) 
+        GEN_PERM_FILE(${type} blocks)
+        SET(exec ${index_name}_index_${t_k})
+        IF(NOT TARGET ${exec})
+            ADD_EXECUTABLE(${exec} src/index.cpp)
+            TARGET_LINK_LIBRARIES(${exec} sdsl -ggdb divsufsort divsufsort64 multi_idx pthread)
+            SET_PROPERTY(TARGET ${exec} PROPERTY COMPILE_DEFINITIONS 
+                         BLOCKS=${blocks}
+                         K=${t_k} 
+                         INDEX_TYPE=${index_type} 
+                         INDEX_NAME="${index_name}")
+        ENDIF()
+        FOREACH(test_case ${test_cases})
+            SET(exp1_result ${CMAKE_BINARY_DIR}/results/${exec}.${test_case}.query.exp1.result.txt)
+            LIST(APPEND exp1_results ${exp1_result})
+            SET(abs_test_case ${CMAKE_HOME_DIRECTORY}/data/${test_case})
+            IF(NOT TARGET ${exp1_result})
+                ADD_CUSTOM_COMMAND(OUTPUT ${exp1_result}
 #                                   COMMAND sh -c "echo 1 >/proc/sys/vm/drop_caches"
-#                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.${query_suf} 0 > ${exp1_result}
+#                                   COMMAND sh -c "sync && purge"                        
+                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.query 0 > ${exp1_result}
 #                                   COMMAND sh -c "echo 1 >/proc/sys/vm/drop_caches"
-#                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.${query_suf} 1 >> ${exp1_result}
-#                                   DEPENDS ${exec} ${test_case}-query-files
-#                                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-#                                   COMMENT "Execute exp1 for b=${blocks} and e=${errors}\nCreating ${exp1_result}.\n \
-#                                            $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.${query_suf} > ${exp1_result}"
-#                                   VERBATIM)
-#
-#            ENDIF(NOT TARGET ${exp1_result})
-#        ENDFOREACH(query_suf)
-#    ENDFOREACH(test_case)
-#ENDFOREACH(line)
-#
-#ADD_CUSTOM_TARGET(exp1
-#                  COMMAND cat ${exp1_results} > ${exp1_result_file}
-##                  COMMAND R --vanilla < ../scripts/table-1.R
-#                  DEPENDS ${exp1_results}
-#                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-#                  COMMENT "Summarize results in ${exp1_result_file}.")
-#
+                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.query 1 >> ${exp1_result}
+                                   COMMAND $<TARGET_FILE:${exec}> ${abs_test_case}.data ${abs_test_case}.100.query 0 1
+                                   DEPENDS ${exec} ${test_case}-query-files
+                                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                                   COMMENT "Execute exp1 for t_k=${t_k}\nCreating ${exp1_result}.\n"
+                                   VERBATIM)
+            ENDIF()
+        ENDFOREACH()
+    ENDFOREACH()
+ENDFOREACH()
+
+ADD_CUSTOM_TARGET(exp1
+                  COMMAND cat ${exp1_results} > ${exp1_result_file}
+                  COMMAND R CMD BATCH ../scripts/exp1.R
+                  DEPENDS ${exp1_results}
+                  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                  COMMENT "\nResults can be found in ${exp1_result_file}.")
+
 ## Experiment 2
 #
 #SET(exp2_result_file "${CMAKE_BINARY_DIR}/results/exp2.result.txt")
