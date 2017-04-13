@@ -8,7 +8,7 @@ include(MultiIndexHelper)
 
 enable_testing()
 
-project(multi_idx CXX C)
+project(multi_idx CXX)
 
 append_cxx_compiler_flags("-msse4.2 -std=c++14 -Wall -DNDEBUG" "GCC" CMAKE_CXX_FLAGS)
 append_cxx_compiler_flags("-O3 -ffast-math -funroll-loops" "GCC" CMAKE_CXX_FLAGS)
