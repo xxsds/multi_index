@@ -7,6 +7,7 @@ Installation
 To be described
 ```bash
 ./install.sh
+mkdir build
 cd build
 cmake .. && make exp0
 ```
